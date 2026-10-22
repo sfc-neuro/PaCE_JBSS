@@ -35,8 +35,7 @@ from sklearn.utils.validation import check_is_fitted, validate_data
 # Stable log(cosh)
 # --------------------------------------------------
 def _log_cosh(u):
-    return jnp.logaddexp(u, -u)
-    # return jnp.logaddexp(u, -u) - jnp.log(2.0)
+    return jnp.logaddexp(u, -u) - jnp.log(2.0)
 
 
 # --------------------------------------------------
@@ -296,8 +295,6 @@ def _optimize_multiple_pairs_deflation(
     Wy = []
     results = []
     n_iter = []
-
-    print(f"{G=}, {c_G=}")
 
     histories = []
     for i in range(n_components):
