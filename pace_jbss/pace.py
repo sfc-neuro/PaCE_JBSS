@@ -35,9 +35,8 @@ from sklearn.utils.validation import check_is_fitted, validate_data
 # Stable log(cosh)
 # --------------------------------------------------
 def _log_cosh(u):
-    #return jnp.logaddexp(u, -u)
-    return jnp.logaddexp(u, -u) - jnp.log(2.0)
-
+    return jnp.logaddexp(u, -u)
+    # return jnp.logaddexp(u, -u) - jnp.log(2.0)
 
 # --------------------------------------------------
 # Other functions (G(u)) to implement
@@ -272,10 +271,10 @@ def _optimize_multiple_pairs_deflation(
     Y0,
     scalarization,
     lam,
-    G=_log_cosh,
-    c_G=79.0156,
-    seed=0,
-    maxiter=500,
+    G,
+    c_G,
+    seed,
+    maxiter,
 ):
     """Extract multiple pairs one by one with deflation.
 
@@ -296,6 +295,8 @@ def _optimize_multiple_pairs_deflation(
     Wy = []
     results = []
     n_iter = []
+
+    print(f"{G=}, {c_G=}")
 
     histories = []
     for i in range(n_components):
@@ -338,9 +339,11 @@ class PaCE(ClassNamePrefixFeaturesOutMixin, TransformerMixin, BaseEstimator):
     n_components : int, default=None
         Number of components to use. If ``None`` is passed, all are used.
 
-    fun : {'logcosh', 'exp'}, default='logcosh'
+    G : {'logcosh', 'exp'} | callable, default='logcosh'
         The functional form of the G function used in the approximation to neg-entropy.
         Could be either ``'logcosh'`` or ``'exp'``.
+
+    c_G : float | None, default None
 
     max_iter : int, default=200
         Maximum number of iterations during fitting of the model.
@@ -408,7 +411,8 @@ class PaCE(ClassNamePrefixFeaturesOutMixin, TransformerMixin, BaseEstimator):
 
     _parameter_constraints: dict = {
         "n_components": [Interval(Integral, 1, None, closed="left"), None],
-        "fun": [StrOptions({"logcosh", "exp"})],
+        "G": [StrOptions({"logcosh", "exp"}), callable],
+        "c_G": [float, None],
         "max_iter": [Interval(Integral, 1, None, closed="left")],
         "tol": [Interval(Real, 0.0, None, closed="left")],
         "scalarization": [callable, None],
@@ -444,8 +448,6 @@ class PaCE(ClassNamePrefixFeaturesOutMixin, TransformerMixin, BaseEstimator):
             raise TypeError("scalarization must be a callable of the form f(*X) -> Y")
 
         self.n_components = n_components
-        self.fun = fun
-        self._c_G = 79.016 if fun == "logcosh" else 33.669
         self.max_iter = max_iter
         self.tol = tol
         self.lam = lam
@@ -536,6 +538,8 @@ class PaCE(ClassNamePrefixFeaturesOutMixin, TransformerMixin, BaseEstimator):
             Y0=X12,
             scalarization=self.scalarization,
             lam=self.lam,
+            G=self.G,
+            c_G=self.c_G,
             seed=self.seed,
             maxiter=self.max_iter,
         )
