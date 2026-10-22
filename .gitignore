@@ -1,0 +1,15 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+junit-results.xml
+tags
+.coverage
+.python-version
+.venv
+.*.swp
+doc/_build
+doc/html

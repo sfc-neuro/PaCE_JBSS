@@ -1,0 +1,70 @@
+[project]
+name = "pace_jbss"
+description = "Add your description here"
+keywords = ["ica", "linear algebra", "machine learning"]
+readme = "README.md"
+authors = [
+    { name = "Silvia Cotroneo", email = "silvia.cotroneo@aalto.fi" },
+    { name = "Marijn van Vliet", email = "marijn.vanvliet@aalto.fi" }
+]
+requires-python = ">=3.13"
+license = { file = "LICENSE" }
+classifiers = [
+	"Intended Audience :: Science/Research",
+	"Intended Audience :: Developers",
+	"Programming Language :: Python",
+	"Topic :: Software Development",
+	"Topic :: Scientific/Engineering",
+	"Operating System :: Microsoft :: Windows",
+	"Operating System :: POSIX",
+	"Operating System :: Unix",
+	"Operating System :: MacOS",
+]
+dependencies = [
+	"scikit-learn",
+	"jax",
+]
+dynamic = ["version"]
+
+[dependency-groups]
+dev = ["pytest", "pytest-cov", "furo"]
+
+[tool.setuptools]
+packages = ["pace_jbss"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pace_jbss.__version__"}
+readme = {file = ["README.md"]}
+
+[tool.pytest.ini_options]
+addopts = """
+    --showlocals --durations=20 --doctest-modules -ra --cov-report=term-missing
+    --doctest-ignore-import-errors --junit-xml=junit-results.xml
+    --ignore=doc --ignore=examples --ignore=tutorials --cov=pace_jbss
+"""
+testpaths = "tests"
+junit_family = "xunit2"
+
+[tool.ruff]
+exclude = ["__init__.py"]
+line-length = 88
+indent-width = 4
+
+[tool.ruff.lint]
+select = ["E", "F", "D", "W"]
+ignore = ["D400", "D204", "D100", "D107", "D203", "D213", "D413", "E741"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.rstcheck]
+ignore_directives = [
+    "autoclass",
+    "autofunction",
+    "automodule",
+    "autosummary",
+	"currentmodule",
+	"toctree",
+	"include",
+ ]
+report_level = "WARNING"
