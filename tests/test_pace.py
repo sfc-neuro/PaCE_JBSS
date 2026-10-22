@@ -41,6 +41,7 @@ def test_basic_demixing():
         n_components=3,
         lam=0,
         scalarization=lambda X, Y: Y - X**2,
+        seed=0,
     )
     S1_c, S2_c = pace.fit_transform(X1, X2)  # Reconstruct signals
 

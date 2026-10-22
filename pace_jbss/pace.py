@@ -38,6 +38,7 @@ def _log_cosh(u):
     return jnp.logaddexp(u, -u)
     # return jnp.logaddexp(u, -u) - jnp.log(2.0)
 
+
 # --------------------------------------------------
 # Other functions (G(u)) to implement
 # --------------------------------------------------
