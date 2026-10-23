@@ -1,11 +1,23 @@
 """Tests for the PACE module."""
 
-import pace_jbss
 import jax
 import numpy as np
+import pace_jbss
 from numpy.testing import assert_allclose
+from scipy.stats import zscore
 
 jax.config.update("jax_platform_name", "cpu")
+
+
+def _evaluate_reconstruction(estimated, true, atol=1e-5):
+    # Compare estimated with true sources. Sources appear in a random order though.
+    assert len(estimated) == len(true)
+    n_sources = len(estimated)
+    cross_corr = np.abs(np.corrcoef(estimated, true)[:n_sources, n_sources:])
+    ordering = cross_corr.argmax(axis=0)  # find best matching source
+    assert len(np.setdiff1d(ordering, np.arange(n_sources))) == 0
+    cross_corr = np.diag(cross_corr[ordering])
+    assert_allclose(cross_corr, 1, atol=atol)  # correlation should be >0.98
 
 
 def test_basic_demixing():
@@ -34,8 +46,8 @@ def test_basic_demixing():
     A2 = np.array([[0.5, 2, 1.0], [1, 2, 1], [1.0, 1.0, 2.0]])
 
     # Generate observations.
-    X1 = np.dot(S1, A1.T)
-    X2 = np.dot(S2, A2.T)
+    X1 = S1 @ A1.T
+    X2 = S2 @ A2.T
 
     pace = pace_jbss.PaCE(
         n_components=3,
@@ -44,16 +56,28 @@ def test_basic_demixing():
         seed=0,
     )
     S1_c, S2_c = pace.fit_transform(X1, X2)  # Reconstruct signals
+    _evaluate_reconstruction(S1_c.T, S1.T, atol=0.02)
+    _evaluate_reconstruction(S2_c.T, S2.T, atol=0.01)
 
-    # Compare estimated with true sources. Sources appear in a random order though.
-    S1_cross_corr = np.abs(np.corrcoef(S1_c.T, S1.T)[:3, 3:])
-    S1_ordering = S1_cross_corr.argmax(axis=0)  # find best matching source
-    assert len(np.setdiff1d(S1_ordering, [0, 1, 2])) == 0
-    S1_cross_corr = S1_cross_corr[:, S1_ordering]
-    assert_allclose(np.diag(S1_cross_corr), 1, atol=0.02)  # correlation should be >0.98
 
-    S2_cross_corr = np.abs(np.corrcoef(S2_c.T, S2.T)[:3, 3:])
-    S2_ordering = S2_cross_corr.argmax(axis=0)  # find best matching source.
-    assert len(np.setdiff1d(S2_ordering, [0, 1, 2])) == 0
-    S2_cross_corr = S2_cross_corr[:, S2_ordering]
-    assert_allclose(np.diag(S2_cross_corr), 1, atol=0.01)  # Correlation should be >0.99
+def test_oscillatory():
+    """Test de-mixing oscillatory signals."""
+    freqs = np.array([32, 13, 41.0])
+    n_sources = len(freqs)
+    times = np.linspace(0.0, 1.0, 10_000, endpoint=False)
+    sources = np.sin(2.0 * np.pi * freqs[:, None] * times[None, :])
+
+    rng = np.random.default_rng(1)
+    mixing1 = rng.random((n_sources, n_sources))
+    mixing2 = rng.random((n_sources, n_sources))
+    # Avoid pathological nearly singular mixing matrices by resampling.
+    assert np.linalg.cond(mixing1) < 1e6
+    assert np.linalg.cond(mixing2) < 1e6
+
+    X1 = (mixing1 @ sources).T
+    X2 = (mixing2 @ sources).T
+
+    pace = pace_jbss.PaCE(seed=0, lam=1.0)
+    S1_c, S2_c = pace.fit_transform(X1, X2)  # Reconstruct signals
+    _evaluate_reconstruction(S1_c.T, sources)
+    _evaluate_reconstruction(S2_c.T, sources)
