@@ -152,8 +152,7 @@ def _build_objective_prewhitened_deflation(
 
         C1 = 0.5 * jnp.log(2 * jnp.pi * jnp.exp(1))
         C2 = 0.5 * jnp.log(2.0 * jnp.pi * jnp.e * (var_z + 1e-12))
-        F = (2 * lam - 1) * (C1 - mx**2 - my**2) + (lam - 1) * (-C2 / c_G + mz_term**2)
-
+        F = - lam * mx**2  - (2 * lam-1) * ( my**2) + (lam - 1) * (-C2 / c_G + mz_term**2)
         return {
             "F": F,
             "wx": wx,
